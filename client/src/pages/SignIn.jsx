@@ -1,82 +1,72 @@
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import { signInFailure, signInStart, signInSuccess } from "../redux/user/userSlice";
 
 const Signin = () => {
-    const [formData,setFormaData] = useState({})
+  const [formData, setFormaData] = useState({});
+  const {loading,error} = useSelector((state)=>state.user)
 
-    const [error,setError] = useState(null)
+  const navigate = useNavigate();
 
-    const [loading,setLoading] = useState(false)
+  const dispatch = useDispatch();
 
-    const navigate = useNavigate()
+  const handleChange = (e) => {
+    setFormaData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
 
-    const handleChange = (e) => {
-        setFormaData({
-            ...formData,
-            [e.target.id]:e.target.value,
-        })
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    try {
+      dispatch(signInStart());
+
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      console.log(data);
+
+      if (data.success === false) {
+        dispatch(signInFailure(data.message));
+        return;
+      }
+      dispatch(signInSuccess(data))
+
+      navigate("/");
+    } catch (error) {
+      dispatch(signInFailure(error.message));
     }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-
-        try {
-            setLoading(true)
-
-            const res = await fetch('/api/auth/signin',{
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(formData)
-            })
-            const data = await res.json();
-            console.log(data)
-    
-            if(data.success === false) {
-                setLoading(false)
-                setError(data.message)
-                return
-            }
-    
-            setLoading(false)
-            setError(null)
-            navigate("/")
-    
-        
-            
-        } catch (error) {
-            setLoading(false)
-            setError(error.message)
-            
-        }
-
-    }
-
-       
-    
-    
   return (
     <div className="max-w-lg p-3 mx-auto">
       <h1 className="text-3xl text-center my-7 font-semibold">Sign In</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-       
         <input
           type="email"
           placeholder="email"
           id="email"
-          className="p-3 border rounded-lg" onChange={handleChange}
+          className="p-3 border rounded-lg"
+          onChange={handleChange}
         />
         <input
           type="password"
           placeholder="password"
           id="password"
-          className="p-3 border rounded-lg" onChange={handleChange}
+          className="p-3 border rounded-lg"
+          onChange={handleChange}
         />
         <button className="uppercase bg-slate-700 text-white p-3 rounded-lg hover:opacity-95 disabled:opacity-80">
-         {loading ? 'Loading' :"Sign in"}
+          {loading ? "Loading" : "Sign in"}
         </button>
       </form>
 
@@ -86,10 +76,14 @@ const Signin = () => {
           <span className="text-blue-500 mt-5">Sign up</span>
         </Link>
       </div>
-      {error && <p className="
-      text-red-500 mt-5">
-        {error}
-      </p>}
+      {error && (
+        <p
+          className="
+      text-red-500 mt-5"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 };
