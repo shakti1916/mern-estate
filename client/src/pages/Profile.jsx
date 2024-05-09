@@ -1,18 +1,94 @@
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { app } from "../firbase";
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
 
 const Profile = () => {
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser,loading,error } = useSelector((state) => state.user);
 
+  const inputRef = useRef(null);
+
+  const [file, setFile] = useState(undefined);
+  const [filePerc, setFilePerc] = useState(0);
+  const [formData, setFormData] = useState({});
+  const [fileUploadError, setFileUploadError] = useState(false);
+  console.log(formData)
+  console.log(filePerc)
+  console.log(fileUploadError)
+
+  
+
+
+
+
+  useEffect(() => {
+    if (file) {
+      handleFileUpload(file);
+    }
+  }, [file]);
+
+  const handleFileUpload = (file) => {
+    const storage = getStorage(app);
+    const fileName = new Date().getTime() + file.name;
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on("state_changed", (snapshot) => {
+      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      setFilePerc(Math.round(progress));
+    },
+    (error) => {
+      setFileUploadError(true);
+    },
+  
+  () => {
+    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) =>
+      setFormData({ ...formData, avatar: downloadURL })
+    );
+  }
+);
+
+  };
+  
   return (
     <div className="max-w-lg mx-auto p-3">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
 
       <form className="flex flex-col gap-4">
+        <input
+          onChange={(e) => setFile(e.target.files[0])}
+          type="file"
+          ref={inputRef}
+          hidden
+          accept="image/*"
+        />
+
         <img
-          src={currentUser.avatar}
+          onClick={() => inputRef.current.click()}
+          src={formData.avatar ||currentUser.avatar}
           alt=""
           className="w-24 h-24 rounded-full mt-2 object-cover self-center cursor-pointer"
         />
+        <p className="text-sm self-center">
+          {fileUploadError ? (
+            <span className="text-red-700">
+           Error in Image Upload (image must be less than 2 mb)
+          </span>
+          ) : 
+            filePerc > 0 && filePerc < 100 ? (
+              <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
+            ) : filePerc === 100 ? (
+              <span className="text-green-700">Image Successfully uploaded</span>
+            ) :(
+              ''
+            )
+          
+          }
+        </p>
         <input
           type="text"
           placeholder="username"
@@ -37,12 +113,8 @@ const Profile = () => {
       </form>
 
       <div className="flex justify-between mt-5">
-        <span className="text-red-700 cursor-pointer">
-          Delete Account
-        </span>
-        <span className="text-red-700 cursor-pointer">
-          Logout
-        </span>
+        <span className="text-red-700 cursor-pointer">Delete Account</span>
+        <span className="text-red-700 cursor-pointer">Logout</span>
       </div>
     </div>
   );
