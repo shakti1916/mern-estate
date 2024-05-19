@@ -7,7 +7,7 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import { deleteUserFailure, deleteUserStart, deleteUserSuccess, updateUserFailure, updateUserStart, updateUserSuccess } from "../redux/user/userSlice";
+import { deleteUserFailure, deleteUserStart, deleteUserSuccess, signOutUserFailure, signOutUserStart, signOutUserSuccess, updateUserFailure, updateUserStart, updateUserSuccess } from "../redux/user/userSlice";
 
 const Profile = () => {
   const { currentUser,loading,error } = useSelector((state) => state.user);
@@ -109,6 +109,26 @@ const Profile = () => {
     }
 
   }
+
+  const handleLogout = async() => {
+    try {
+      dispatch(signOutUserStart())
+      const res = await fetch('/api/auth/signout')
+
+      const data = await res.json();
+      if(data.success == false) {
+        dispatch(signOutUserFailure(data.message))
+        return
+      }
+
+      dispatch(signOutUserSuccess(data))
+      
+    } catch (error) {
+      dispatch(signOutUserFailure(error.message))
+      
+    }
+
+  }
   
   return (
     <div className="max-w-lg mx-auto p-3">
@@ -175,7 +195,7 @@ const Profile = () => {
 
       <div className="flex justify-between mt-5">
         <span onClick={handleDeleteUser} className="text-red-700 cursor-pointer">Delete Account</span>
-        <span className="text-red-700 cursor-pointer">Logout</span>
+        <span onClick={handleLogout} className="text-red-700 cursor-pointer">Logout</span>
       </div>
       <p className="text-red-700 mt-5">
         {error ? error : ''}
