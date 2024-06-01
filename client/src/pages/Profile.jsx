@@ -47,6 +47,7 @@ const Profile = () => {
     },
     (error) => {
       setFileUploadError(true);
+      console.log(error)
     },
   
   () => {
