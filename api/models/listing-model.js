@@ -21,7 +21,7 @@ const listingSchema =  new mongoose.Schema({
         required:true,
 
     },
-    disCountPrice:{
+    discountPrice:{
         type:Number,
         required:true,
 
